@@ -35,13 +35,14 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  templateVars = {shortURL: req.params.shortURL, longURL: req.params.longURL};
+  templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
+  urlDatabase = {shortURL: longURL};
   console.log(req.body);  
-  res.send("Ok");         
+  res.redirect("/urls/:shortURL");         
 });
 
 app.listen(PORT, () => {
