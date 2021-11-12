@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
-const PORT = 8080;
+const PORT = 8080; // default port 8080
+
 app.set("view engine", "ejs");
 
 function generateRandomString() {
@@ -13,6 +14,7 @@ const urlDatabase = {
 };
 
 const bodyParser = require("body-parser");
+const { url } = require("inspector");
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -45,13 +47,40 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  if (shortURL) {
+    //get the long url for the short url s
+    const longURL = urlDataba[shortURL];
+    if (longURL) {
+      res.redirect(longURL);
+    } else {
+      res
+        .status(404)
+        .send({ message: "long url not found for the given short url" });
+    }
+  }
+});
+
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   if (longURL) {
-    const shortURL = generateRandomString(longURL);
-    urlDatabase[shortURL] = longURL;
-    console.log(urlDatabase);
-    console.log(req.body);
+    let shortURL;
+    //check if long url already exists in database
+    if (Object.values(urlDatabase).indexOf(longURL) > -1) {
+      //if long url exists return the already existing short url      
+      Object.keys(urlDatabase).every((item) => {
+        if (urlDatabase[item] === longURL) {
+          shortURL = item;
+          return false;
+        }
+        return true;
+      });
+    } else {
+      //generate new short url     
+      shortURL = generateRandomString(longURL);
+      urlDatabase[shortURL] = longURL;
+    }
     res.redirect(`/urls/${shortURL}`);
   } else {
     res.status(500).send({ message: "invalid long url" });
