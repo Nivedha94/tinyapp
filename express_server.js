@@ -64,11 +64,15 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('partials/_header.ejs')
+  res.render('partials/_header.ejs');
 });
 
 app.post('/urls', (req, res) => {
 
+});
+
+app.get('/register', (req, res) => {
+  res.render('register.ejs');
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
