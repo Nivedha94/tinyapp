@@ -15,6 +15,7 @@ const urlDatabase = {
 
 const bodyParser = require("body-parser");
 const { url } = require("inspector");
+const { rawListeners } = require("process");
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -60,6 +61,14 @@ app.get("/u/:shortURL", (req, res) => {
         .send({ message: "long url not found for the given short url" });
     }
   }
+});
+
+app.get('/login', (req, res) => {
+  res.render('partials/_header.ejs')
+});
+
+app.post('/urls', (req, res) => {
+
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
