@@ -1,8 +1,14 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+const cookieSession = require("cookie-session");
+const cookieParser = require("cookie-parser");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080; 
+app.use(cookieParser());
 
 app.set("view engine", "ejs");
+
+app.use(bodyParser.urlencoded({ extended: true }));
 
 function generateRandomString() {
   return Math.random().toString(36).slice(6);
@@ -12,10 +18,6 @@ const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
-
-const bodyParser = require("body-parser");
-const { url } = require("inspector");
-app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -96,6 +98,15 @@ app.post("/urls", (req, res) => {
   } else {
     res.status(500).send({ message: "invalid long url" });
   }
+});
+
+app.get('/register', (req, res) => {
+  res.render('register.ejs');
+});
+
+app.post("/logout", (req, res) => {
+  req.session = null;
+  res.redirect('/urls');
 });
 
 app.listen(PORT, () => {
