@@ -136,10 +136,34 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  req.session = null;
+  res.clearCookie('username');
   res.redirect('/urls');
 });
 
+app.get("/login", (req, res) => {
+  let templateVars = {
+    user: users[req.cookies["user_id"]],
+  };
+  res.render('login.ejs', templateVars);
+});
+
+
+app.post("/login", (req, res) => {
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
+
+  if (!emailExists(email)) {
+    res.send(403, "There is no account associated with this email address");
+  } else {
+    const userID = emailExists(email);
+    if (users[userID].password !== password) {
+      res.send(403, "The password you entered does not match the one associated with the provided email address");
+    } else {
+      res.cookie('user_id', userID);
+      res.redirect("/urls");
+    }
+  }
+});
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
