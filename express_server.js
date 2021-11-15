@@ -1,6 +1,5 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookieSession = require("cookie-session");
 const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080; 
@@ -14,10 +13,27 @@ function generateRandomString() {
   return Math.random().toString(36).slice(6);
 }
 
+const userExists = function(email) {
+  for (const user in users) {
+    if(users[user].email === email) {
+      return true;
+    }
+    return false;
+  }
+};
+
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
+  "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
+
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "new@user.com",
+    password: "hello-enemy-safe"
+  }
+}
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -37,8 +53,9 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -76,32 +93,38 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL;
-  if (longURL) {
-    let shortURL;
-    //check if long url already exists in database
-    if (Object.values(urlDatabase).indexOf(longURL) > -1) {
-      //if long url exists return the already existing short url      
-      Object.keys(urlDatabase).every((item) => {
-        if (urlDatabase[item] === longURL) {
-          shortURL = item;
-          return false;
-        }
-        return true;
-      });
-    } else {
-      //generate new short url     
-      shortURL = generateRandomString(longURL);
-      urlDatabase[shortURL] = longURL;
-    }
-    res.redirect(`/urls/${shortURL}`);
-  } else {
-    res.status(500).send({ message: "invalid long url" });
-  }
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get('/register', (req, res) => {
-  res.render('register.ejs');
+  let templateVars = {
+    username: req.cookies["username"],
+  };
+  res.render('register.ejs', templateVars);
+});
+
+app.post("/register", (req, res) => {
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
+
+  if (!userEmail || !userPassword) {
+    res.send(400, "Please include both a valid email and password");
+  };
+
+  if (userExists(userEmail)) {
+    res.send(400, "An account already exists for this email address");
+  };
+
+  const newUserID = generateRandomString();
+  users[newUserID] = {
+    id: newUserID,
+    email: userEmail,
+    password: userPassword
+  };
+    res.cookie('user_id', newUserID);
+    res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
