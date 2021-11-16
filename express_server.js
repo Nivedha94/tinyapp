@@ -13,7 +13,7 @@ function generateRandomString() {
   return Math.random().toString(36).slice(6);
 }
 
-const userExists = function(email) {
+const emailExists = function(email) {
   for (const user in users) {
     if(users[user].email === email) {
       return true;
@@ -121,7 +121,7 @@ app.post("/register", (req, res) => {
     res.send(400, "Please include both a valid email and password");
   };
 
-  if (userExists(userEmail)) {
+  if (emailExists(userEmail)) {
     res.send(400, "An account already exists for this email address");
   };
 
@@ -152,10 +152,10 @@ app.post("/login", (req, res) => {
   const userEmail = req.body.email;
   const userPassword = req.body.password;
 
-  if (!emailExists(email)) {
+  if (!emailExists(userEmail)) {
     res.send(403, "There is no account associated with this email address");
   } else {
-    const userID = emailExists(email);
+    const userID = emailExists(userEmail);
     if (users[userID].password !== password) {
       res.send(403, "The password you entered does not match the one associated with the provided email address");
     } else {
