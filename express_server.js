@@ -13,14 +13,13 @@ function generateRandomString() {
   return Math.random().toString(36).slice(6);
 }
 
-const emailExists = function(email) {
-  for (const user in users) {
-    if(users[user].email === email) {
-      return true;
-    }
-    return false;
-  }
+const emailExists = function (email) {
+  return Object.values(users).some(element => element.email === email);
 };
+
+const lookupUserId = function(emailLookup) {
+  return Object.values(users).find(user => user.email === emailLookup).id
+  };
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -30,10 +29,16 @@ const urlDatabase = {
 const users = {
   "userRandomID": {
     id: "userRandomID",
-    email: "new@user.com",
-    password: "hello-enemy-safe"
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
   }
-}
+};
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -49,28 +54,22 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  templateVars = {
-    urls: urlDatabase,
-    user: users[req.cookies["user_id"]],
-  };
+  let user = users[req.cookies["user_id"]];
+  let templateVars = { urls: urlDatabase, user };
   res.render("urls_index", templateVars);
 });
 
 
 app.get("/urls/new", (req, res) => {
-  templateVars = {
-    user: users[req.cookies["user_id"]],
-  };
+  let user = users[req.cookies["user_id"]];
+  let templateVars = { user };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"],
-    user: users[req.cookies["user_id"]],
-  };
+  let shortURL = req.params.shortURL;
+  let user = users[req.cookies["user_id"]];
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[shortURL], user };
   res.render("urls_show", templateVars);
 });
 
@@ -141,29 +140,31 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  let templateVars = {
-    user: users[req.cookies["user_id"]],
-  };
-  res.render('login.ejs', templateVars);
-});
+  let user = users[req.cookies["user_id"]];
+  let templateVars = { user };
+  res.render("login", templateVars);
+})
 
 
 app.post("/login", (req, res) => {
-  const userEmail = req.body.email;
-  const userPassword = req.body.password;
-
+  let userEmail = req.body.email;
+  let userPassword = req.body.password;
   if (!emailExists(userEmail)) {
-    res.send(403, "There is no account associated with this email address");
+    res.status(403).send("This email cannot be found.");
+    return;
   } else {
-    const userID = emailExists(userEmail);
-    if (users[userID].password !== password) {
-      res.send(403, "The password you entered does not match the one associated with the provided email address");
+    console.log("the users database: ", users);
+    let user_id = lookupUserId(userEmail);
+    console.log("the user_id gettind checked: ", user_id)
+    if (userPassword !== users[user_id].password) {
+      res.status(403).send("Password does not match");
     } else {
-      res.cookie('user_id', userID);
+      res.cookie("user_id", user_id);
       res.redirect("/urls");
     }
   }
 });
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
