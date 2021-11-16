@@ -22,8 +22,8 @@ const lookupUserId = function(emailLookup) {
   };
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID"},
+  "9sm5xK": { longURL: "http://www.google.com", userID: "userRandomID"},
 };
 
 const users = {
@@ -44,11 +44,6 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-//Check for additional endpoint
-app.get("/urls.json", (req, res) => {
-  res.send(urlDatabase);
-});
-
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
@@ -63,13 +58,19 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   let user = users[req.cookies["user_id"]];
   let templateVars = { user };
-  res.render("urls_new", templateVars);
+  if (!req.cookies["user_id"]) {
+    res.redirect("/login");
+  } else {
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let shortURL = req.params.shortURL;
   let user = users[req.cookies["user_id"]];
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[shortURL], user };
+  let templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL].longURL,
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -77,7 +78,7 @@ app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   if (shortURL) {
     //get the long url for the short url s
-    const longURL = urlDataba[shortURL];
+    const longURL = urlDatabase[req.params.shortURL].longURL;
     if (longURL) {
       res.redirect(longURL);
     } else {
@@ -101,7 +102,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"],
+  };
+  console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
