@@ -12,6 +12,9 @@ const emailExists = function (email, database) {
 
 
 const getUserByEmail = function(emailLookup, database) {
+  if (!Object.values(database).find(user => user.email === emailLookup)) {
+    return undefined;
+  }
   return Object.values(database).find(user => user.email === emailLookup).id
   };
 
@@ -43,5 +46,5 @@ module.exports = {
   checkUserEmailExists, 
   getUserByEmail, 
   urlsForUser,
-  belongsToUser
+  belongsToUser,
 };
