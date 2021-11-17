@@ -6,11 +6,6 @@ const updateURL = (shortURL, longURL, database) => {
   urlDatabase[shortURL].longURL = longURL;
 };
 
-const emailExists = function (email, database) {
-  return Object.values(users).some(element => element.email === email);
-};
-
-
 const getUserByEmail = function(emailLookup, database) {
   if (!Object.values(database).find(user => user.email === emailLookup)) {
     return undefined;
@@ -43,7 +38,6 @@ const belongsToUser = function (id, shortURL, database) {
 module.exports = { 
   generateRandomString,
   updateURL, 
-  checkUserEmailExists, 
   getUserByEmail, 
   urlsForUser,
   belongsToUser,

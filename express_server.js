@@ -6,7 +6,7 @@ const bcrypt = require("bcrypt");
 const { assert } = require('chai');
 const app = express();
 const PORT = 8080; 
-app.use(cookieParser());
+
 
 app.set("view engine", "ejs");
 
@@ -36,7 +36,49 @@ const users = {
   }
 };
 
-const { generateRandomString, updateURL, emailExists, urlsForUser, belongsToUser, getUserByEmail} = require("./helpers");
+const emailExists = function (email, database) {
+  return Object.values(users).some(element => element.email === email);
+};
+
+function generateRandomString() {
+  return Math.random().toString(36).slice(6);
+}
+
+const updateURL = (shortURL, longURL, database) => {
+  urlDatabase[shortURL].longURL = longURL;
+};
+
+const getUserByEmail = function(emailLookup, database) {
+  if (!Object.values(database).find(user => user.email === emailLookup)) {
+    return undefined;
+  }
+  return Object.values(database).find(user => user.email === emailLookup).id
+  };
+
+const urlsForUser = function (id, database) {
+  let matchingKeys = [], userFilteredUrlDatabase = {};
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      matchingKeys.push(url);
+    }
+  }
+  matchingKeys.forEach(key => {
+    userFilteredUrlDatabase[key] = urlDatabase[key];
+  });
+  return userFilteredUrlDatabase;
+}
+
+const belongsToUser = function (id, shortURL, database) {
+  let usersUrls = urlsForUser(id); let found = false;
+  Object.keys(usersUrls).forEach(url => {
+    if (url === shortURL) {
+      found = true;
+    }
+  }); return found;
+}
+
+
+// const { generateRandomString, updateURL, urlsForUser, belongsToUser, getUserByEmail} = require("./helpers");
 
 //Home page, doesnt show anything!
 app.get("/", (req, res) => {
@@ -64,7 +106,8 @@ app.post("/urls", (req, res) => {
   let user = users[req.session.user_id];
   urlDatabase[shortURL] = { longURL: req.body.longURL, userID: user.id };
   console.log(urlDatabase);
-  res.redirect(`/urls/${shortURL}`);
+  res.redirect('/urls');
+
 });
 
 //Registration page
@@ -101,10 +144,10 @@ app.post("/register", (req, res) => {
 //Login page
 app.get("/login", (req, res) => {
   let user = users[req.session.user_id];
-  if (user) {
-    res.redirect("/urls");
-    return;
-  }
+  // if (user) {
+  //   res.redirect("/urls");
+  //   return;
+  // }
   let templateVars = { user };
   res.render("login", templateVars);
 });
@@ -119,12 +162,14 @@ app.post("/login", (req, res) => {
     console.log("the users database: ", users);
     let user_id = getUserByEmail(userEmail, users);
     console.log("the user_id gettind checked: ", user_id)
-    if (bcrypt.compareSync(passwordInput, users[user_id].password)) {
-      req.session.user_id = user_id;
-      res.redirect("/urls");
-    } else {
+    console.log(userPassword);
+    console.log(users[user_id].password);
+    if (bcrypt.compareSync(userPassword, users[user_id].password)) {
       res.status(403).send("Password does not match");
       return;
+    } else {
+      req.session.user_id = user_id;
+      res.redirect("/urls");
     }
   }
 });
