@@ -1,6 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const morgan = require("morgan");
+const bcrypt = require("bcrypt");
 const app = express();
 const PORT = 8080; 
 app.use(cookieParser());
@@ -8,6 +10,9 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(cookieParser());
+app.use(morgan("dev"));
 
 function generateRandomString() {
   return Math.random().toString(36).slice(6);
@@ -130,17 +135,15 @@ app.post("/register", (req, res) => {
   };
 
   const newUserID = generateRandomString();
-  users[newUserID] = {
-    id: newUserID,
-    email: userEmail,
-    password: userPassword
-  };
-    res.cookie('user_id', newUserID);
-    res.redirect("/urls");
+  let hashedPassword = bcrypt.hashSync(req.body.password, 10);
+  users[userID] = { id: userID, email: req.body.email, password: hashedPassword };
+  (console.log("current url database: \n", users))
+  res.cookie('user_id', newUserID);
+  res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');
 });
 
@@ -161,11 +164,12 @@ app.post("/login", (req, res) => {
     console.log("the users database: ", users);
     let user_id = lookupUserId(userEmail);
     console.log("the user_id gettind checked: ", user_id)
-    if (userPassword !== users[user_id].password) {
-      res.status(403).send("Password does not match");
-    } else {
+    if (bcrypt.compareSync(passwordInput, users[user_id].password)) {
       res.cookie("user_id", user_id);
       res.redirect("/urls");
+    } else {
+      res.status(403).send("Password does not match");
+      return;
     }
   }
 });
