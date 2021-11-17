@@ -17,18 +17,6 @@ app.use(cookieSession({
 }));
 app.use(morgan("dev"));
 
-function generateRandomString() {
-  return Math.random().toString(36).slice(6);
-}
-
-const emailExists = function (email) {
-  return Object.values(users).some(element => element.email === email);
-};
-
-const lookupUserId = function(emailLookup) {
-  return Object.values(users).find(user => user.email === emailLookup).id
-  };
-
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID"},
   "9sm5xK": { longURL: "http://www.google.com", userID: "userRandomID"},
@@ -47,29 +35,7 @@ const users = {
   }
 };
 
-const lookupUserId = function (emailLookup) {
-  return Object.values(users).find(user => user.email === emailLookup).id
-};
-const urlsForUser = function (id) {
-  let matchingKeys = [], userFilteredUrlDatabase = {};
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      matchingKeys.push(url);
-    }
-  }
-  matchingKeys.forEach(key => {
-    userFilteredUrlDatabase[key] = urlDatabase[key];
-  });
-  return userFilteredUrlDatabase;
-}
-
-const belongsToUser = function (id, shortURL) {
-  let usersUrls = urlsForUser(id); let found = false;
-  console.log("usersUrls: ", usersUrls);
-  Object.keys(usersUrls).forEach(url => {
-    if (url === shortURL) {
-      found = true;
-
+const {generateRandomString, updateURL, emailExists, urlsForUser, belongsToUser, getUserByEmail} = require("./helpers");
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -80,8 +46,14 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let user = users[req.cookies["user_id"]];
-  let templateVars = { urls: urlDatabase, user };
+  let user = users[req.session.user_id];
+  console.log("this is req.session.user_id: ", req.session.user_id)
+  if (!req.session.user_id) {
+    res.redirect("/login");
+    return;
+  }
+  let filteredUrlDatabase = urlsForUser(user.id, urlDatabase);
+  let templateVars = { urls: filteredUrlDatabase, user };
   res.render("urls_index", templateVars);
 });
 
@@ -104,7 +76,7 @@ app.get("/urls/:shortURL", (req, res) => {
   }
   let shortURL = req.params.shortURL;
   let longURL = req.body.longURL;
-  updateURL(shortURL, longURL);
+  updateURL(shortURL, longURL, urlDatabase);
   res.redirect("/urls");
 });
 
@@ -158,7 +130,7 @@ app.post("/register", (req, res) => {
     res.send(400, "Please include both a valid email and password");
   };
 
-  if (emailExists(userEmail)) {
+  if (emailExists(req.body.email, users)) {
     res.send(400, "An account already exists for this email address");
   };
 
@@ -185,12 +157,12 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   let userEmail = req.body.email;
   let userPassword = req.body.password;
-  if (!emailExists(userEmail)) {
+  if (!emailExists(userEmail, users)) {
     res.status(403).send("This email cannot be found.");
     return;
   } else {
     console.log("the users database: ", users);
-    let user_id = lookupUserId(userEmail);
+    let user_id = getUserByEmail(userEmail, users);
     console.log("the user_id gettind checked: ", user_id)
     if (bcrypt.compareSync(passwordInput, users[user_id].password)) {
       req.session.user_id = user_id;
