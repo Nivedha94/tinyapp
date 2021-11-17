@@ -8,7 +8,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 !["Screenshot of Login page](#)
 
-!["Screenshot of New user registration page](#)
+!["Screenshot of New user registration page](https://github.com/Nivedha94/tinyapp/blob/master/docs/New_user_registration.png?raw=true)
 
 
 ## Dependencies
